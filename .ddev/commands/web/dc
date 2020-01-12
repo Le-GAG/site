@@ -1,0 +1,7 @@
+#!/bin/bash
+
+## Description: Run composer in the Directus api directory
+## Usage: dc [flags] [args]
+## Example: "ddev dc install" or "ddev dc dump-qutoloqd"
+
+composer --working-dir=/var/www/html/api/core $@

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+## Description: Run the directus utility in the api directory
+## Usage: directus [flags] [args]
+## Example: "ddev install:config" or "ddev directus cache:clear -N _"
+
+api/core/bin/directus $@
