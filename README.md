@@ -7,7 +7,7 @@ This meta project aims at simplifying the setup of a full Le GAG's website.
 
 ````shell script
 PROJECT_ROOT=$(pwd)
-git clone --recurse-submodules git@github.com:Le-GAG/site.git
+git clone --recurse-submodules git@github.com:Le-GAG/site.git .
 ddev start
 
 # API setup
@@ -15,23 +15,29 @@ echo '{ "super_admin_token": "" }' > api/core/config/__api.json
 ddev dc install
 ddev directus install:config -n db -u db -p db -h db
 ddev directus install:database -k _
-ddev directus install:install -k _ -e <email@address> -p password
+ddev directus install:install -k _ -e <email@address> -p <password>
+
+# Extensions
+cd $PROJECT_ROOT/api/extensions/orders-module
+npm install
+npm run build -- --no-source-maps --output=$PROJECT_ROOT/api/core/public/extensions/custom/modules/le-gag-orders
 
 # APP setup
 echo '/.env' >> $PROJECT_ROOT/.git/modules/app/info/exclude
 cd $PROJECT_ROOT/app
 echo 'API_URL=https://le-gag.ddev.site' > .env
-npm install
-npm run serve
+yarn
+yarn serve
 ````
 
 
 ## Running
+
 ````shell script
 PROJECT_ROOT=$(pwd)
 ddev start
 cd $PROJECT_ROOT/app
-npm run dev --open
+yarn serve --open
 ````
 
 ## Deployment
