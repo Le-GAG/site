@@ -1,12 +1,15 @@
 [submodule "frontend"]
 	path = frontend
-	url = git@github.com:nstCactus/gag-frontend.git
-[submodule "api/core"]
-	path = api/core
-	url = https://github.com/directus/api.git
+	url = git@github.com:Le-GAG/frontend.git
 [submodule "api/extensions/orders-module"]
 	path = api/extensions/orders-module
 	url = git@github.com:Le-GAG/directus-module-extension-orders.git
+[submodule "api/extensions/le-gag-hooks"]
+	path = api/extensions/le-gag-hooks
+	url = git@github.com:Le-GAG/directus-hooks.git
+[submodule "api/core"]
+	path = api/core
+	url = https://github.com/directus/api.git
 [submodule "app"]
 	path = app
 	url = https://github.com/directus/app.git
