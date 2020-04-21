@@ -21,6 +21,7 @@ ddev directus install:install -k _ -e <email@address> -p <password>
 cd $PROJECT_ROOT/api/extensions/orders-module
 npm install
 npm run build -- --no-source-maps --output=$PROJECT_ROOT/api/core/public/extensions/custom/modules/le-gag-orders
+cp -r $PROJECT_ROOT/api/extensions/le-gag-hooks $PROJECT_ROOT/api/core/public/extensions/custom/hooks/LeGAG
 
 # APP setup
 echo '/.env' >> $PROJECT_ROOT/.git/modules/app/info/exclude
