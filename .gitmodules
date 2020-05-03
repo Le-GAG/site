@@ -7,6 +7,9 @@
 [submodule "api/extensions/le-gag-hooks"]
 	path = api/extensions/le-gag-hooks
 	url = git@github.com:Le-GAG/directus-hooks.git
+[submodule "importer"]
+	path = importer
+	url = git@github.com:Le-GAG/importer.git
 [submodule "api/core"]
 	path = api/core
 	url = https://github.com/directus/api.git
