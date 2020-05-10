@@ -1,0 +1,91 @@
+image: lahautesociete/nodejs-ci:12
+cache:
+  paths:
+    - api/core/vendor
+    - api/extensions/orders-module/node_modules/
+    - app/node_modules
+    - frontend/node_modules
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+Build orders-module:
+  stage: build
+  only:
+    - preproduction
+    - production
+  script:
+    - cd api/extensions/orders-module
+    - npm install
+    - npm run dev --input src --output dist
+
+  artifacts:
+    paths:
+      - api/extensions/orders-module/dist
+    expire_in: 1 week
+
+
+Build backend API:
+  image: lahautesociete/php-ci:7.1-r4
+  stage: build
+  only:
+    - preproduction
+    - production
+  script:
+    - cp -R api/extensions/le-gag-hooks api/core/public/extensions/custom/hooks/LeGAG
+    - cd api/core
+    - composer install --prefer-dist --optimize-autoloader --no-interaction --no-suggest
+  artifacts:
+    paths:
+      - api/core/vendor
+      - api/core/public/extensions/custom
+    expire_in: 1 week
+
+Build backend APP:
+  stage: build
+  only:
+    - preproduction
+    - production
+  script:
+    - cd app
+    - echo 'NODE_ENV=production' >> .env.preproduction
+    - echo 'API_URL=https://api.backend.gag.preprod.yohann-bianchi.ovh' >> .env.preproduction
+    - echo 'API_URL=https://api.le-gag.fr' >> .env.production
+    - yarn
+    - yarn build --mode $CI_COMMIT_REF_NAME
+  artifacts:
+    paths:
+      - app/node_modules
+      - app/dist
+    expire_in: 1 week
+
+Build frontend:
+  stage: build
+  only:
+    - preproduction
+    - production
+  script:
+    - cd frontend
+    - yarn
+    - yarn build
+  artifacts:
+    paths:
+      - app/node_modules
+      - app/dist
+    expire_in: 1 week
+
+Deploy:
+  stage: deploy
+  only:
+    - preproduction
+    - production
+  script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - cp -R api/extensions/orders-module/dist api/core/public/extensions/custom/modules/le-gag-orders
+    - yarn
+    - yarn deployator --environment $CI_COMMIT_REF_NAME
+
