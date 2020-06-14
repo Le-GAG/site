@@ -1,0 +1,119 @@
+image: lahautesociete/nodejs-ci:12
+cache:
+  paths:
+    - api/core/vendor
+    - api/extensions/orders-module/node_modules/
+    - app/node_modules
+    - frontend/node_modules
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+
+Build orders-module:
+  stage: build
+  cache:
+    key: orders-module_${CI_COMMIT_REF_SLUG}
+    paths:
+      - api/extensions/orders-module/.npm/
+  only:
+    - preproduction
+    - production
+  script:
+    - cd api/extensions/orders-module
+    - npm ci --cache .npm --prefer-offline
+    - npm run build -- --no-source-maps --output=dist
+
+  artifacts:
+    paths:
+      - api/extensions/orders-module/dist
+    expire_in: 1 week
+
+
+Build backend API:
+  image: lahautesociete/php-ci:7.1-r4
+  stage: build
+  cache:
+    key: api_${CI_COMMIT_REF_SLUG}
+    paths:
+      - api/core/vendor/
+  only:
+    - preproduction
+    - production
+  script:
+    - cp -R api/extensions/le-gag-hooks api/core/public/extensions/custom/hooks/LeGAG
+    - cd api/core
+    - composer install --prefer-dist --optimize-autoloader --no-interaction --no-suggest
+  artifacts:
+    paths:
+      - api/core/vendor
+      - api/core/public/extensions/custom
+    expire_in: 1 week
+
+Build backend APP:
+  stage: build
+  cache:
+    key: app_${CI_COMMIT_REF_SLUG}
+    paths:
+      - app/.yarn/
+      - app/node_modules/
+  only:
+    - preproduction
+    - production
+  script:
+    - cd app
+    - echo 'NODE_ENV=production' >> .env.preproduction
+    - echo 'API_URL=https://api.preprod.le-gag.fr' >> .env.preproduction
+    - echo 'API_URL=https://api.le-gag.fr' >> .env.production
+    - yarn config set cache-folder $(pwd)/.yarn
+    - yarn
+    - yarn build --mode $CI_COMMIT_REF_NAME
+  artifacts:
+    paths:
+      - app/node_modules
+      - app/dist
+    expire_in: 1 week
+
+Build frontend:
+  stage: build
+  cache:
+    key: frontend_${CI_COMMIT_REF_SLUG}
+    paths:
+      - frontend/.yarn/
+      - frontend/node_modules/
+  only:
+    - preproduction
+    - production
+  script:
+    - cd frontend
+    - yarn config set cache-folder $(pwd)/.yarn
+    - yarn
+    - yarn build
+  artifacts:
+    paths:
+      - frontend/node_modules
+      - frontend/dist
+    expire_in: 1 week
+
+Deploy:
+  stage: deploy
+  cache:
+    key: deploy_${CI_COMMIT_REF_SLUG}
+    paths:
+      - .yarn/
+      - node_modules
+  only:
+    - preproduction
+    - production
+  script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "le-gag.fr ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDhZo9V3yxV/meEH5x2FlLmu/2+gWZduQWBIfO3iAy3ThDYFYG5WKAnTsP456/xol+ft8cYiE5U+w0ZAzVHAEzARKAq1HZYf15Hv9H8j8E0i3uwUTvaTueFgndrF7dIQWuGNqsnF1UBu9TnV9RnjX2slMKzuIzAnljyqpPi6ajiddtsaexb7ZYBEi6JueZ48PLwbrpOqhXXoLo6ZAF60sbschgkNnWq/nrxSLoPj+LV8N/A7gSaKhp0mRRG5n3x9pgCFgm5lvH0w7NcjfNysBd87hB3mPQBMUtzT4fnMfhcSjV4pnV/tPJjOv5um4YkEwjFm2Fz9Yezt9h6etE6OduV" >> ~/.ssh/known_hosts
+    - cp -R api/extensions/orders-module/dist api/core/public/extensions/custom/modules/le-gag-orders
+    - yarn config set cache-folder $(pwd)/.yarn
+    - yarn
+    - yarn deployator --environment app_${CI_COMMIT_REF_NAME} deploy
+    - yarn deployator --environment api_${CI_COMMIT_REF_NAME} deploy
+    - yarn deployator --environment frontend_${CI_COMMIT_REF_NAME} deploy
