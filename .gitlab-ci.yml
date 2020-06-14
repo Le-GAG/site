@@ -87,7 +87,7 @@ Build frontend:
     - cd frontend
     - yarn config set cache-folder $(pwd)/.yarn
     - yarn
-    - yarn build
+    - yarn build --mode $CI_COMMIT_REF_NAME
   artifacts:
     paths:
       - frontend/node_modules
