@@ -1,4 +1,4 @@
-image: lahautesociete/nodejs-ci:12
+image: lahautesociete/nodejs-ci:14
 cache:
   paths:
     - api/core/vendor
